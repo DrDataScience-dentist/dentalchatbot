@@ -60,20 +60,31 @@ chat_flow = {
 if "current" not in st.session_state:
     st.session_state.current = "start"
 
-if "bot_msg" not in st.session_state:
-    # Store only the **current bot message**
-    st.session_state.bot_msg = chat_flow[st.session_state.current]["message"]
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 # ------------------------------
-# Display bot message
+# Show conversation history
 # ------------------------------
-st.text(st.session_state.bot_msg)
+for msg in st.session_state.history:
+    if msg["role"] == "bot":
+        st.text(f"Bot: {msg['content']}")
+    else:
+        st.text(f"You: {msg['content']}")
 
 # ------------------------------
-# Show options as clickable buttons
+# Show current bot message (once)
 # ------------------------------
-clicked_option = None
+if not st.session_state.history or st.session_state.history[-1]["role"] != "bot":
+    bot_msg = chat_flow[st.session_state.current]["message"]
+    st.session_state.history.append({"role": "bot", "content": bot_msg})
+    st.text(f"Bot: {bot_msg}")
+
+# ------------------------------
+# Show clickable options
+# ------------------------------
 options = chat_flow[st.session_state.current]["options"]
+clicked_option = None
 
 if options:
     for i, opt in enumerate(options):
@@ -82,26 +93,22 @@ if options:
             break
 
 # ------------------------------
-# Handle click
+# Process click
 # ------------------------------
 if clicked_option:
-    # Determine next node key
+    # Record user click
+    st.session_state.history.append({"role": "user", "content": clicked_option})
+
+    # Determine next node
     next_key = f"{st.session_state.current} - {clicked_option}" \
         if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
 
     st.session_state.current = next_key if next_key in chat_flow else "start"
 
-    # Update only **bot message**
-    st.session_state.bot_msg = chat_flow[st.session_state.current]["message"]
-
-    # Rerun safely
-    st.experimental_rerun()
-
 # ------------------------------
-# Restart button for end nodes
+# Restart button for leaf nodes
 # ------------------------------
 elif not options:
     if st.button("🔄 Restart"):
         st.session_state.current = "start"
-        st.session_state.bot_msg = chat_flow["start"]["message"]
-        st.experimental_rerun()
+        st.session_state.history = []
