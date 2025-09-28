@@ -1,56 +1,29 @@
 import streamlit as st
-from datetime import datetime
 
 # ------------------------------
 # Page config and styles
 # ------------------------------
-st.set_page_config(page_title="🦷 Tooth Rescue WhatsApp Bot", page_icon="🟢")
+st.set_page_config(page_title="🦷 Tooth Rescue Bot", page_icon="🟢")
 
 st.markdown("""
 <style>
-.chat-container {
-    max-height: 600px;
-    overflow-y: auto;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    background-color: #f0f0f0;
-}
-
 .user-msg {
     background-color: #dcf8c6;
     padding: 10px;
-    border-radius: 15px 15px 0 15px;
+    border-radius: 10px;
     margin: 5px 0;
     text-align: right;
-    max-width: 80%;
-    float: right;
-    clear: both;
-    box-shadow: 0px 1px 2px rgba(0,0,0,0.2);
 }
-
 .bot-msg {
     background-color: #ffffff;
     padding: 10px;
-    border-radius: 15px 15px 15px 0;
+    border-radius: 10px;
     margin: 5px 0;
+    border: 1px solid #ddd;
     text-align: left;
-    max-width: 80%;
-    float: left;
-    clear: both;
-    box-shadow: 0px 1px 2px rgba(0,0,0,0.1);
-}
-
-.timestamp {
-    font-size: 10px;
-    color: gray;
-    margin-top: 2px;
-}
-.buttons-container {
-    margin-top: 10px;
 }
 button {
-    margin: 3px 3px 3px 0;
+    margin: 5px 5px 5px 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -60,7 +33,7 @@ button {
 # ------------------------------
 chat_flow = {
     "start": {
-        "message": "Hi 👋 I’m *TOOTH RESCUE*. Tell me what happened:",
+        "message": "Hi 👋 I’m TOOTH RESCUE. Tell me what happened:",
         "options": [
             "🦷 Tooth knocked out (Avulsion)",
             "↔️ Tooth moved (Extrusive luxation)",
@@ -118,22 +91,19 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ------------------------------
-# Helper to show messages with timestamp
+# Helper to show messages
 # ------------------------------
 def show_message(role, text):
-    timestamp = datetime.now().strftime("%H:%M")
     if role == "user":
-        st.markdown(f"<div class='user-msg'>{text}<div class='timestamp'>{timestamp}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='user-msg'>{text}</div>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<div class='bot-msg'>{text}<div class='timestamp'>{timestamp}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='bot-msg'>{text}</div>", unsafe_allow_html=True)
 
 # ------------------------------
-# Render chat history inside scrollable container
+# Render chat history
 # ------------------------------
-st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
 for msg in st.session_state.history:
     show_message(msg["role"], msg["content"])
-st.markdown("</div>", unsafe_allow_html=True)
 
 # ------------------------------
 # Show current bot message
@@ -142,16 +112,14 @@ node = chat_flow[st.session_state.current]
 show_message("bot", node["message"])
 
 # ------------------------------
-# Show options as buttons
+# Show clickable options
 # ------------------------------
 clicked_option = None
 if node["options"]:
-    st.markdown("<div class='buttons-container'>", unsafe_allow_html=True)
     for option in node["options"]:
         if st.button(option, key=f"{st.session_state.current}_{option}"):
             clicked_option = option
             break
-    st.markdown("</div>", unsafe_allow_html=True)
 
 if clicked_option:
     st.session_state.history.append({"role": "user", "content": clicked_option})
