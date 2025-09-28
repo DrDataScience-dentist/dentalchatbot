@@ -86,8 +86,7 @@ chat_flow = {
         "options": ["Yes", "No"],
     },
     "Extrusive - Permanent tooth - Slightly displaced - Yes": {
-        "message": """Apply gentle pressure with gauze.  
-Now → How long ago did the injury occur?""",
+        "message": "How long ago did the injury occur?",
         "options": ["< 60 mins", "> 60 mins"],
     },
     "Extrusive - Permanent tooth - Slightly displaced - No": {
@@ -299,8 +298,8 @@ with st.chat_message("assistant"):
 
 # Display options
 if node["options"]:
-    choice = st.radio("Choose:", node["options"], key=st.session_state.current)
-    if st.button("Next"):
+    choice = st.radio("Choose:", node["options"], key="radio_" + st.session_state.current)
+    if st.button("Next", key="btn_" + st.session_state.current):
         # Build next key
         if st.session_state.current == "Tooth completely knocked out (Avulsion)":
             next_key = f"Avulsion - {choice}"
@@ -315,11 +314,14 @@ if node["options"]:
         else:
             next_key = f"{st.session_state.current} - {choice}"
 
-        # ✅ SAFETY CHECK
+        # Safety check
         if next_key in chat_flow:
             st.session_state.current = next_key
         else:
-            st.session_state.current = "start"  # fallback (restart)
+            st.session_state.current = "start"
             st.warning("⚠️ That path is not yet defined. Restarting chatbot.")
         st.rerun()
-
+else:
+    if st.button("🔄 Restart", key="restart_" + st.session_state.current):
+        st.session_state.current = "start"
+        st.rerun()
