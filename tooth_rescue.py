@@ -9,6 +9,7 @@ st.markdown("""
 <style>
 .user-msg {
     background-color: #dcf8c6;
+    color: #000000;  /* black text */
     padding: 10px;
     border-radius: 10px;
     margin: 5px 0;
@@ -16,6 +17,7 @@ st.markdown("""
 }
 .bot-msg {
     background-color: #ffffff;
+    color: #000000;  /* black text */
     padding: 10px;
     border-radius: 10px;
     margin: 5px 0;
@@ -112,20 +114,28 @@ node = chat_flow[st.session_state.current]
 show_message("bot", node["message"])
 
 # ------------------------------
-# Show clickable options
+# Show clickable options safely
 # ------------------------------
 clicked_option = None
 if node["options"]:
     for option in node["options"]:
         if st.button(option, key=f"{st.session_state.current}_{option}"):
             clicked_option = option
-            break
+            break  # stop after first clicked button
 
 if clicked_option:
+    # Add user message
     st.session_state.history.append({"role": "user", "content": clicked_option})
-    next_key = f"{st.session_state.current} - {clicked_option}" if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
+
+    # Determine next node key
+    next_key = f"{st.session_state.current} - {clicked_option}" \
+        if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
     st.session_state.current = next_key if next_key in chat_flow else "start"
+
+    # Add bot reply
     st.session_state.history.append({"role": "bot", "content": chat_flow[st.session_state.current]["message"]})
+
+    # Rerun safely
     st.experimental_rerun()
 elif not node["options"]:
     if st.button("🔄 Restart"):
