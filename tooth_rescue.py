@@ -1,34 +1,6 @@
 import streamlit as st
 
 # ------------------------------
-# Page config and styles
-# ------------------------------
-st.set_page_config(page_title="🦷 Tooth Rescue Bot", page_icon="🟢")
-
-st.markdown("""
-<style>
-.bot-msg, .user-msg {
-    padding: 12px;
-    border-radius: 10px;
-    margin: 6px 0;
-    max-width: 80%;
-}
-.bot-msg {
-    background-color: #f1f1f1;
-    color: #000;
-}
-.user-msg {
-    background-color: #dcf8c6;
-    color: #000;
-    margin-left: auto;
-}
-button {
-    margin: 4px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ------------------------------
 # Decision tree
 # ------------------------------
 chat_flow = {
@@ -87,47 +59,49 @@ chat_flow = {
 # ------------------------------
 if "current" not in st.session_state:
     st.session_state.current = "start"
-if "history" not in st.session_state:
-    st.session_state.history = []
+
+if "bot_msg" not in st.session_state:
+    # Store only the **current bot message**
+    st.session_state.bot_msg = chat_flow[st.session_state.current]["message"]
 
 # ------------------------------
-# Show messages
+# Display bot message
 # ------------------------------
-for msg in st.session_state.history:
-    role = msg["role"]
-    text = msg["content"]
-    if role == "user":
-        st.markdown(f"<div class='user-msg'>{text}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='bot-msg'>{text}</div>", unsafe_allow_html=True)
-
-# Show current bot message
-node = chat_flow[st.session_state.current]
-st.markdown(f"<div class='bot-msg'>{node['message']}</div>", unsafe_allow_html=True)
+st.text(st.session_state.bot_msg)
 
 # ------------------------------
-# Display options as buttons in columns
+# Show options as clickable buttons
 # ------------------------------
 clicked_option = None
-if node["options"]:
-    cols = st.columns(len(node["options"]))
-    for i, option in enumerate(node["options"]):
-        if cols[i].button(option, key=f"{st.session_state.current}_{option}"):
-            clicked_option = option
+options = chat_flow[st.session_state.current]["options"]
+
+if options:
+    for i, opt in enumerate(options):
+        if st.button(opt, key=f"{st.session_state.current}_{i}"):
+            clicked_option = opt
             break
 
 # ------------------------------
-# Process click
+# Handle click
 # ------------------------------
 if clicked_option:
-    st.session_state.history.append({"role": "user", "content": clicked_option})
-    next_key = f"{st.session_state.current} - {clicked_option}" if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
+    # Determine next node key
+    next_key = f"{st.session_state.current} - {clicked_option}" \
+        if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
+
     st.session_state.current = next_key if next_key in chat_flow else "start"
-    st.session_state.history.append({"role": "bot", "content": chat_flow[st.session_state.current]["message"]})
+
+    # Update only **bot message**
+    st.session_state.bot_msg = chat_flow[st.session_state.current]["message"]
+
+    # Rerun safely
     st.experimental_rerun()
 
-elif not node["options"]:
+# ------------------------------
+# Restart button for end nodes
+# ------------------------------
+elif not options:
     if st.button("🔄 Restart"):
         st.session_state.current = "start"
-        st.session_state.history = []
+        st.session_state.bot_msg = chat_flow["start"]["message"]
         st.experimental_rerun()
