@@ -63,6 +63,9 @@ if "current" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "bot_spoken" not in st.session_state:
+    st.session_state.bot_spoken = False  # Flag to prevent double message
+
 # ------------------------------
 # Show conversation history
 # ------------------------------
@@ -73,12 +76,13 @@ for msg in st.session_state.history:
         st.text(f"You: {msg['content']}")
 
 # ------------------------------
-# Show current bot message (once)
+# Show current bot message once
 # ------------------------------
-if not st.session_state.history or st.session_state.history[-1]["role"] != "bot":
+if not st.session_state.bot_spoken:
     bot_msg = chat_flow[st.session_state.current]["message"]
     st.session_state.history.append({"role": "bot", "content": bot_msg})
     st.text(f"Bot: {bot_msg}")
+    st.session_state.bot_spoken = True
 
 # ------------------------------
 # Show clickable options
@@ -96,14 +100,16 @@ if options:
 # Process click
 # ------------------------------
 if clicked_option:
-    # Record user click
+    # Record user choice
     st.session_state.history.append({"role": "user", "content": clicked_option})
 
     # Determine next node
     next_key = f"{st.session_state.current} - {clicked_option}" \
         if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
-
     st.session_state.current = next_key if next_key in chat_flow else "start"
+
+    # Reset bot_spoken flag for next node
+    st.session_state.bot_spoken = False
 
 # ------------------------------
 # Restart button for leaf nodes
@@ -112,3 +118,4 @@ elif not options:
     if st.button("🔄 Restart"):
         st.session_state.current = "start"
         st.session_state.history = []
+        st.session_state.bot_spoken = False
