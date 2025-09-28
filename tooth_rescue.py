@@ -7,25 +7,23 @@ st.set_page_config(page_title="🦷 Tooth Rescue Bot", page_icon="🟢")
 
 st.markdown("""
 <style>
-.user-msg {
-    background-color: #dcf8c6;
-    color: #000000;  /* black text */
-    padding: 10px;
+.bot-msg, .user-msg {
+    padding: 12px;
     border-radius: 10px;
-    margin: 5px 0;
-    text-align: right;
+    margin: 6px 0;
+    max-width: 80%;
 }
 .bot-msg {
-    background-color: #ffffff;
-    color: #000000;  /* black text */
-    padding: 10px;
-    border-radius: 10px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    text-align: left;
+    background-color: #f1f1f1;
+    color: #000;
+}
+.user-msg {
+    background-color: #dcf8c6;
+    color: #000;
+    margin-left: auto;
 }
 button {
-    margin: 5px 5px 5px 0;
+    margin: 4px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -93,50 +91,41 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ------------------------------
-# Helper to show messages
+# Show messages
 # ------------------------------
-def show_message(role, text):
+for msg in st.session_state.history:
+    role = msg["role"]
+    text = msg["content"]
     if role == "user":
         st.markdown(f"<div class='user-msg'>{text}</div>", unsafe_allow_html=True)
     else:
         st.markdown(f"<div class='bot-msg'>{text}</div>", unsafe_allow_html=True)
 
-# ------------------------------
-# Render chat history
-# ------------------------------
-for msg in st.session_state.history:
-    show_message(msg["role"], msg["content"])
-
-# ------------------------------
 # Show current bot message
-# ------------------------------
 node = chat_flow[st.session_state.current]
-show_message("bot", node["message"])
+st.markdown(f"<div class='bot-msg'>{node['message']}</div>", unsafe_allow_html=True)
 
 # ------------------------------
-# Show clickable options safely
+# Display options as buttons in columns
 # ------------------------------
 clicked_option = None
 if node["options"]:
-    for option in node["options"]:
-        if st.button(option, key=f"{st.session_state.current}_{option}"):
+    cols = st.columns(len(node["options"]))
+    for i, option in enumerate(node["options"]):
+        if cols[i].button(option, key=f"{st.session_state.current}_{option}"):
             clicked_option = option
-            break  # stop after first clicked button
+            break
 
+# ------------------------------
+# Process click
+# ------------------------------
 if clicked_option:
-    # Add user message
     st.session_state.history.append({"role": "user", "content": clicked_option})
-
-    # Determine next node key
-    next_key = f"{st.session_state.current} - {clicked_option}" \
-        if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
+    next_key = f"{st.session_state.current} - {clicked_option}" if f"{st.session_state.current} - {clicked_option}" in chat_flow else clicked_option
     st.session_state.current = next_key if next_key in chat_flow else "start"
-
-    # Add bot reply
     st.session_state.history.append({"role": "bot", "content": chat_flow[st.session_state.current]["message"]})
-
-    # Rerun safely
     st.experimental_rerun()
+
 elif not node["options"]:
     if st.button("🔄 Restart"):
         st.session_state.current = "start"
