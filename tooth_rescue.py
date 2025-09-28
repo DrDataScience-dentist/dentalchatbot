@@ -301,7 +301,7 @@ with st.chat_message("assistant"):
 if node["options"]:
     choice = st.radio("Choose:", node["options"], key=st.session_state.current)
     if st.button("Next"):
-        next_key = st.session_state.current
+        # Build next key
         if st.session_state.current == "Tooth completely knocked out (Avulsion)":
             next_key = f"Avulsion - {choice}"
         elif st.session_state.current == "Tooth moved slightly out (Extrusive luxation)":
@@ -315,9 +315,11 @@ if node["options"]:
         else:
             next_key = f"{st.session_state.current} - {choice}"
 
-        st.session_state.current = next_key
+        # ✅ SAFETY CHECK
+        if next_key in chat_flow:
+            st.session_state.current = next_key
+        else:
+            st.session_state.current = "start"  # fallback (restart)
+            st.warning("⚠️ That path is not yet defined. Restarting chatbot.")
         st.rerun()
-else:
-    if st.button("🔄 Restart"):
-        st.session_state.current = "start"
-        st.rerun()
+
