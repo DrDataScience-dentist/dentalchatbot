@@ -1,5 +1,8 @@
 import streamlit as st
 
+# ------------------------------
+# Page config and styles
+# ------------------------------
 st.set_page_config(page_title="🦷 Tooth Rescue WhatsApp Bot", page_icon="🟢")
 
 st.markdown(
@@ -61,6 +64,33 @@ chat_flow = {
 - Dentist check soon""",
         "options": [],
     },
+    "↔️ Tooth moved (Extrusive luxation)": {
+        "message": """⚠️ Handle gently:  
+- Avoid pushing it further  
+- Soft diet  
+- See dentist within 24h""",
+        "options": [],
+    },
+    "⬇️ Tooth pushed in (Intrusive luxation)": {
+        "message": """⚠️ Do not try to pull it out yourself.  
+- Soft diet  
+- See dentist ASAP""",
+        "options": [],
+    },
+    "🌀 Tooth loosened": {
+        "message": """⚠️ Stabilize the tooth:  
+- Avoid biting hard  
+- Soft diet  
+- See dentist soon""",
+        "options": [],
+    },
+    "💥 Tooth broken/chipped": {
+        "message": """⚠️ Rinse mouth with water  
+- Save broken pieces if possible  
+- Avoid eating hard foods  
+- See dentist""",
+        "options": [],
+    },
     "👄 Gum/lip/face injury": {
         "message": """🩸 Clean wound  
 - Apply pressure to stop bleeding  
@@ -77,13 +107,16 @@ chat_flow = {
 }
 
 # ------------------------------
-# State
+# Session state
 # ------------------------------
 if "current" not in st.session_state:
     st.session_state.current = "start"
 if "history" not in st.session_state:
     st.session_state.history = []
 
+# ------------------------------
+# Helper to show messages
+# ------------------------------
 def show_message(role, text):
     if role == "user":
         st.markdown(f"<div class='user-msg'>{text}</div>", unsafe_allow_html=True)
@@ -91,35 +124,39 @@ def show_message(role, text):
         st.markdown(f"<div class='bot-msg'>{text}</div>", unsafe_allow_html=True)
 
 # ------------------------------
-# Render conversation
+# Render chat history
 # ------------------------------
 for msg in st.session_state.history:
     show_message(msg["role"], msg["content"])
 
-# Current node
+# ------------------------------
+# Show current bot message
+# ------------------------------
 node = chat_flow[st.session_state.current]
 show_message("bot", node["message"])
 
-# Options (auto advance)
+# ------------------------------
+# Show options as buttons
+# ------------------------------
 if node["options"]:
-    choice = st.radio("Select:", node["options"], key="opt_" + st.session_state.current)
-    if choice:
-        # Add user reply
-        st.session_state.history.append({"role": "user", "content": choice})
+    for option in node["options"]:
+        if st.button(option, key=f"{st.session_state.current}_{option}"):
+            # Add user message
+            st.session_state.history.append({"role": "user", "content": option})
 
-        # Next key
-        next_key = f"{st.session_state.current} - {choice}" if f"{st.session_state.current} - {choice}" in chat_flow else choice
-        if next_key in chat_flow:
-            st.session_state.current = next_key
-        else:
-            st.session_state.current = "start"
+            # Determine next node key
+            next_key = f"{st.session_state.current} - {option}" if f"{st.session_state.current} - {option}" in chat_flow else option
+            if next_key in chat_flow:
+                st.session_state.current = next_key
+            else:
+                st.session_state.current = "start"
 
-        # Add bot reply
-        st.session_state.history.append({"role": "bot", "content": chat_flow[st.session_state.current]["message"]})
+            # Add bot reply
+            st.session_state.history.append({"role": "bot", "content": chat_flow[st.session_state.current]["message"]})
 
-        st.rerun()
+            st.experimental_rerun()
 else:
     if st.button("🔄 Restart"):
         st.session_state.current = "start"
         st.session_state.history = []
-        st.rerun()
+        st.experimental_rerun()
